@@ -1,51 +1,33 @@
-from app.services.retrieval_service import retrieve_documents
+from app.services.vector_search_service import search_similar_chunks
 from app.services.llm_service import ask_llm
 from app.prompts.rag import RAG_PROMPT
 
 
-documents = [
-    "Employees receive 30 days of annual leave every year.",
-    "Employees must submit leave requests to their manager.",
-    "The company headquarters is located in Dubai.",
-    "Employees can work remotely two days per week.",
-    "The company provides health insurance to employees."
-]
+question = "What is Retrieval-Augmented Generation?"
 
+# 1. Retrieve relevant chunks
+results = search_similar_chunks(question, top_k=3)
 
-question = "How many vacation days do employees get?"
-
-
-retrieved_documents = retrieve_documents(
-    question,
-    documents,
-    top_k=3
+# 2. Build context
+context = "\n\n".join(
+    result.chunk_text
+    for result in results
 )
 
-
-context = "\n".join(
-    document
-    for document, score in retrieved_documents
-)
-
-
+# 3. Build RAG prompt
 prompt = RAG_PROMPT.format(
     context=context,
     question=question
 )
 
-
+# 4. Ask the LLM
 answer = ask_llm(prompt)
-
 
 print("\nQUESTION:")
 print(question)
 
-print("\nRETRIEVED DOCUMENTS:")
+print("\nRETRIEVED CONTEXT:")
+print(context)
 
-for document, score in retrieved_documents:
-    print(f"\nScore: {score:.4f}")
-    print(document)
-
-
-print("\nFINAL ANSWER:")
+print("\nLLM ANSWER:")
 print(answer)
